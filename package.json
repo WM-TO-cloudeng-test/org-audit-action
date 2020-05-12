@@ -31,6 +31,7 @@
     "csv2md": "1.0.1"
   },
   "devDependencies": {
+    "eslint": "^7.0.0",
     "prettier": "1.19.1"
   }
 }

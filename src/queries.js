@@ -40,6 +40,7 @@ const queries = {
                 node {
                   name
                   login
+                  location
                 }
                 permission
               }

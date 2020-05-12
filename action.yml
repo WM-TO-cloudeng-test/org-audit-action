@@ -1,26 +1,26 @@
-name: 'Membership Audit Action for Enterprises and Organizations'
-description: 'Outputs the membership access details of enterprise account or organization'
+name: "Membership Audit Action for Enterprises and Organizations"
+description: "Outputs the membership access details of enterprise account or organization"
 inputs:
   organization:
-    description: 'Specify an organization if you want to audit a single org. Only specify either an organization or an enterprise account.'
+    description: "Specify an organization if you want to audit a single org. Only specify either an organization or an enterprise account."
     required: false
   enterprise:
-    description: 'Specify an Enterprise Account. Only specify either an organization or an enterprise account.'
+    description: "Specify an Enterprise Account. Only specify either an organization or an enterprise account."
     required: false
   token:
-    description: 'Scopes required: repo, read:org, read:enterprise (if using enterprise mode)'
+    description: "Scopes required: repo, read:org, read:enterprise (if using enterprise mode)"
     required: true
   issue:
-    description: 'If you want the output posted on an issue in the repo running the action'
+    description: "If you want the output posted on an issue in the repo running the action"
     required: false
-    default: false
+    default: "false"
   samlIdentities:
-    description: 'If your organization is using SAML SSO and you want to retrieve the SAML nameId field for members'
+    description: "If your organization is using SAML SSO and you want to retrieve the SAML nameId field for members"
     required: false
-    default: false
+    default: "false"
 outputs:
   csv:
-    description: 'A CSV string with the output'
+    description: "A CSV string with the output"
 runs:
-  using: 'node12'
-  main: 'dist/index.js'
+  using: "node12"
+  main: "dist/index.js"
