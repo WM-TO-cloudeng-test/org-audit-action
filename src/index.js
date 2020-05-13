@@ -17,6 +17,7 @@ const ERROR_MESSAGE_ARCHIVED_REPO =
   "Must have push access to view repository collaborators.";
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
   "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization.";
+const util = require("util");
 
 !fs.existsSync(DATA_FOLDER) && fs.mkdirSync(DATA_FOLDER);
 
@@ -125,7 +126,7 @@ class CollectUserData {
       collaboratorsCursor,
       repositoriesCursor
     });
-
+    console.log("data: " + util.inspect(data, { depth: null }));
     return data;
   }
 
@@ -138,6 +139,7 @@ class CollectUserData {
         repositoriesCursor
       );
     } catch (error) {
+      console.log("catch block err: " + error);
       if (error.message === ERROR_MESSAGE_TOKEN_UNAUTHORIZED) {
         core.info(
           `⏸  The token you use isn't authorized to be used with ${organization}`
@@ -241,7 +243,6 @@ class CollectUserData {
         core.startGroup(`🔍 Start collecting for organization ${login}.`);
         this.result[login] = null;
         await this.collectData(login);
-
         if (this.result[login]) {
           core.info(
             `✅ Finished collecting for organization ${login}, total number of repos: ${this.result[login].repositories.nodes.length}`
@@ -271,10 +272,7 @@ class CollectUserData {
       `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}.json`,
       JSON.stringify(json)
     );
-    await writeFileAsync(
-      `${DATA_FOLDER}/${ARTIFACT_FILE_NAME}.csv`,
-      csv
-    );
+    await writeFileAsync(`${DATA_FOLDER}/${ARTIFACT_FILE_NAME}.csv`, csv);
 
     await this.createandUploadArtifacts();
     await this.postResultsToIssue(csv);
@@ -292,10 +290,16 @@ class CollectUserData {
       }
       let useSamlIdentities = false;
       // if samlIdentities:true is specified and saml identities exist for the organization ...
-      if (this.options.samlIdentities && this.result[organization].samlIdentityProvider) {
+      if (
+        this.options.samlIdentities &&
+        this.result[organization].samlIdentityProvider
+      ) {
         useSamlIdentities = true;
       }
-      if (this.options.samlIdentities && !this.result[organization].samlIdentityProvider) {
+      if (
+        this.options.samlIdentities &&
+        !this.result[organization].samlIdentityProvider
+      ) {
         core.info(
           `⏸  No SAML Identities found for ${organization}, SAML SSO is either not configured or no member accounts are linked to your SAML IdP`
         );
@@ -303,7 +307,8 @@ class CollectUserData {
 
       let externalIdentities;
       if (useSamlIdentities === true) {
-        externalIdentities = this.result[organization].samlIdentityProvider.externalIdentities;
+        externalIdentities = this.result[organization].samlIdentityProvider
+          .externalIdentities;
       }
       this.result[organization].repositories.nodes.forEach(repository => {
         if (!repository.collaborators.edges) {
@@ -317,9 +322,9 @@ class CollectUserData {
             samlIdentity = "";
             externalIdentities.edges.forEach(identity => {
               if (identity.node.user.login == collaborator.node.login) {
-                  samlIdentity = identity.node.samlIdentity.nameId;
+                samlIdentity = identity.node.samlIdentity.nameId;
               }
-            })
+            });
           }
 
           this.normalizedData.push({
@@ -328,7 +333,9 @@ class CollectUserData {
             repository: repository.name,
             name: collaborator.node.name,
             login: collaborator.node.login,
-            ...((useSamlIdentities === true) ? { samlIdentity: samlIdentity } : null),
+            ...(useSamlIdentities === true
+              ? { samlIdentity: samlIdentity }
+              : null),
             permission: collaborator.permission
           });
         });
@@ -339,13 +346,15 @@ class CollectUserData {
 
 const main = async () => {
   const token = core.getInput("token") || process.env.TOKEN;
-  const organization = core.getInput("organization") || process.env.ORGANIZATION;
+  const organization =
+    core.getInput("organization") || process.env.ORGANIZATION;
   const enterprise = core.getInput("enterprise") || process.env.ENTERPRISE;
 
   const Collector = new CollectUserData(token, organization, enterprise, {
     repository: process.env.GITHUB_REPOSITORY,
     postToIssue: core.getInput("issue") || process.env.ISSUE,
-    samlIdentities: (core.getInput("samlIdentities") || process.env.samlIdentities) === 'true'
+    samlIdentities:
+      (core.getInput("samlIdentities") || process.env.samlIdentities) === "true"
   });
   await Collector.startCollection();
 };

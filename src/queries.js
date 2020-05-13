@@ -40,9 +40,21 @@ const queries = {
                 node {
                   name
                   login
-                  location
                 }
                 permission
+                permissionSources {
+                    source {
+                        ... on Organization {
+                            organization: name
+                        }
+                        ... on Repository {
+                            repository: name
+                        }
+                        ... on Team {
+                            team: name
+                        }
+                    }
+                }
               }
             }
           }
