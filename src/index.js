@@ -4,7 +4,8 @@ const github = require("@actions/github");
 const { graphql } = require("@octokit/graphql");
 const csvToMarkdown = require("csv-to-markdown-table");
 const fs = require("fs");
-const { promisify } = require("util");
+const { promisify, inspect } = require("util");
+//const { inspect } = require("util");
 
 const { JSONtoCSV } = require("./utils");
 const { organizationQuery, enterpriseQuery } = require("./queries");
@@ -17,7 +18,6 @@ const ERROR_MESSAGE_ARCHIVED_REPO =
   "Must have push access to view repository collaborators.";
 const ERROR_MESSAGE_TOKEN_UNAUTHORIZED =
   "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization.";
-const util = require("util");
 
 !fs.existsSync(DATA_FOLDER) && fs.mkdirSync(DATA_FOLDER);
 
@@ -126,7 +126,7 @@ class CollectUserData {
       collaboratorsCursor,
       repositoriesCursor
     });
-    console.log("data: " + util.inspect(data, { depth: null }));
+    console.log("data: " + inspect(data, { depth: null }));
     return data;
   }
 
@@ -266,6 +266,7 @@ class CollectUserData {
       return core.setFailed(`⚠️  No data collected. Stopping action`);
     }
 
+    console.log(inspect(json, { depth: null }));
     const csv = JSONtoCSV(json);
 
     await writeFileAsync(
@@ -277,6 +278,17 @@ class CollectUserData {
     await this.createandUploadArtifacts();
     await this.postResultsToIssue(csv);
     process.exit();
+  }
+  getPermissionSourceByKind(sources, kind) {
+    let val = "";
+    for (var source of sources) {
+      console.log(source);
+      if (source["source"][kind]) {
+        val = source["source"][kind];
+        break;
+      }
+    }
+    return val;
   }
 
   normalizeResult() {
@@ -336,7 +348,19 @@ class CollectUserData {
             ...(useSamlIdentities === true
               ? { samlIdentity: samlIdentity }
               : null),
-            permission: collaborator.permission
+            permission: collaborator.permission,
+            organizationSource: this.getPermissionSourceByKind(
+              collaborator.permissionSources,
+              "organization"
+            ),
+            repositorySource: this.getPermissionSourceByKind(
+              collaborator.permissionSources,
+              "repository"
+            ),
+            teamSource: this.getPermissionSourceByKind(
+              collaborator.permissionSources,
+              "team"
+            )
           });
         });
       });
